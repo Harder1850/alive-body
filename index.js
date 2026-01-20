@@ -166,21 +166,6 @@ async function runSingleObservationCycle() {
       timestamp,
     });
 
-    // 4. Consult the Brain for judgment (DESCRIPTIVE ONLY)
-    await consultBrain({
-      consultationId: generateConsultationId(),
-      observations: senseEvents,
-      environment: environmentContext,
-      // Optional fields (present but inert)
-      bodyState: {},
-      question: "",
-      timestamp,
-    });
-
-    // 5. Perform noop actuation only
-    const bodyAction = selectBodyAction({ judgment: "no-op" }, config);
-    await performActuation(bodyAction);
-
     logLifecycleEvent("body.observation.complete", {
       timestamp,
     });
