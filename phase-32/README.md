@@ -47,3 +47,8 @@ Execution is blocked; receipt is written.
 ### unregistered action
 
 Execution is blocked; receipt is written.
+
+## Constitutional Oversight
+
+Execution authority and boundaries are verified by the system-wide audit:
+`alive-core/CONSTITUTIONAL_AUDITS.md`
