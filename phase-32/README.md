@@ -25,3 +25,25 @@ node phase-32/execute.ts
 
 Disable execution instantly by setting:
 { "enabled": false }
+
+## Failure Modes
+
+For each failure mode below:
+
+**Execution is blocked; receipt is written.**
+
+### expired authorization
+
+Execution is blocked; receipt is written.
+
+### invalid authority
+
+Execution is blocked; receipt is written.
+
+### kill switch engaged
+
+Execution is blocked; receipt is written.
+
+### unregistered action
+
+Execution is blocked; receipt is written.

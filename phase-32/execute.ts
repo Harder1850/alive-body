@@ -13,6 +13,18 @@ function assertKillSwitch() {
   }
 }
 
+function classifyBlockReason(err: unknown):
+  | "expired_authority"
+  | "kill_switch"
+  | "invalid_authority"
+  | "invalid_action" {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (/kill switch/i.test(msg)) return "kill_switch";
+  if (/expired/i.test(msg)) return "expired_authority";
+  if (/authority/i.test(msg)) return "invalid_authority";
+  return "invalid_action";
+}
+
 function assertAuthorization(auth: any) {
   if (!auth.authority?.validated) {
     throw new Error("Authority not validated.");
@@ -31,22 +43,41 @@ function writeReceipt(entry: Record<string, unknown>) {
 }
 
 // ---- main ----
-const auth = loadJSON<any>("phase-32/execution-authorization.json");
+const executionId = crypto.randomUUID();
+let actionName = "";
+let authoritySource = "";
 
-assertKillSwitch();
-assertAuthorization(auth);
+try {
+  const auth = loadJSON<any>("phase-32/execution-authorization.json");
+  actionName = String(auth?.authorization?.action ?? "");
+  authoritySource = String(auth?.authority?.source ?? "");
 
-const action = actionRegistry[auth.authorization.action];
-if (!action) {
-  throw new Error("Action not registered.");
+  assertKillSwitch();
+  assertAuthorization(auth);
+
+  const action = actionRegistry[auth.authorization.action];
+  if (!action) {
+    throw new Error("Action not registered.");
+  }
+
+  action(auth.authorization.parameters);
+
+  writeReceipt({
+    execution_id: executionId,
+    action: actionName,
+    authority: authoritySource,
+    timestamp: new Date(0).toISOString(),
+    result: "success",
+  });
+} catch (err) {
+  // Receipt is mandatory even for blocked attempts.
+  writeReceipt({
+    execution_id: executionId,
+    action: actionName,
+    authority: authoritySource,
+    timestamp: new Date(0).toISOString(),
+    result: "blocked",
+    reason: classifyBlockReason(err),
+  });
+  throw err;
 }
-
-action(auth.authorization.parameters);
-
-writeReceipt({
-  execution_id: crypto.randomUUID(),
-  action: auth.authorization.action,
-  authority: auth.authority.source,
-  timestamp: new Date(0).toISOString(),
-  result: "success",
-});
