@@ -1,0 +1,16 @@
+{
+  "authority": {
+    "type": "human",
+    "source": "operator:m.harder@example.com",
+    "version": "2026-01-21",
+    "validated": true
+  },
+  "authorization": {
+    "action": "log",
+    "parameters": {
+      "message": "Authorized execution test"
+    },
+    "approved_at": "2026-01-21T12:00:00Z",
+    "expires_at": "2026-01-21T13:00:00Z"
+  }
+}
