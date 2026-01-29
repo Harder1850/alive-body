@@ -16,7 +16,8 @@
 
 import WebSocket from 'ws';
 
-const SYSTEM_URL = 'ws://localhost:7070/?type=body';
+const SYSTEM_URL = process.env.ALIVE_SYSTEM_URL ? `${process.env.ALIVE_SYSTEM_URL}/?type=body` : 'ws://localhost:7070/?type=body';
+
 
 let socket = null;
 let connected = false;
