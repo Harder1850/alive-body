@@ -42,6 +42,9 @@ import { recordExperience } from "./events/record.js";
 // Brain interface (FIREWALL — do not bypass)
 import { consultBrain } from "./nervous-system/alive-bridge.js";
 
+// System connector (body ↔ alive-system)
+import { startSystemConnector } from "./nervous-system/system-connector.js";
+
 // Actuation (execution)
 import { performActuation } from "./actuators/index.js";
 
@@ -145,6 +148,9 @@ export async function startBody() {
 async function runSingleObservationCycle() {
   // Load body-only configuration
   const config = loadBodyConfig();
+
+  // Connect to alive-system (spinal link)
+  startSystemConnector();
 
   // Initialize body state (non-cognitive)
   initializeBodyState(config);

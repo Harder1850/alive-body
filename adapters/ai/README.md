@@ -1,195 +1,140 @@
-# External AI Adapter Interface (Schema-Only)
+# AI Adapter
 
-## Purpose
+Multi-provider LLM adapter for alive-body.
 
-External AI adapters:
+**Transport only. No cognition.**
 
-- provide advisory text or signals
-- are non-authoritative
-- are explicitly untrusted
-- operate only after execution approval
-- never execute tools or actions
+---
 
-## File layout
+## Supported Providers
 
-```
-alive-body/
-  adapters/
-    ai/
-      aiTypes.ts
-      aiRequest.ts
-      aiResponse.ts
-      aiAdapter.ts
-      README.md
-```
+| Provider | Models | Env Variable |
+|----------|--------|--------------|
+| Anthropic | claude-sonnet-4-20250514, claude-3-5-haiku-* | `ANTHROPIC_API_KEY` |
+| OpenAI | gpt-4o, gpt-4-turbo, gpt-3.5-turbo | `OPENAI_API_KEY` |
 
-## AI Capability Declaration
+---
 
-**File**
+## Setup
 
-`adapters/ai/aiTypes.ts`
+Set environment variables:
 
-```ts
-export type AICapability =
-  | 'TEXT_COMPLETION'
-  | 'CHAT_COMPLETION'
-  | 'EMBEDDING'
-  | 'CLASSIFICATION'
-  | 'SUMMARIZATION';
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+export OPENAI_API_KEY=sk-...
 ```
 
-Capabilities are declared, not inferred.
+---
 
-## AI Model Descriptor
+## Usage
 
-```ts
-export type AIModelDescriptor = {
-  provider: 'OPENAI' | 'LOCAL' | 'CUSTOM';
-  modelId: string;
-  version?: string;
-  locality: 'REMOTE' | 'LOCAL';
-};
+### Simple prompt
+
+```typescript
+import { ask } from './adapters/ai/index.js';
+
+const response = await ask('What is 2+2?');
+console.log(response.content);
 ```
 
-## AI Request (what is being asked)
+### With provider selection
 
-**File**
+```typescript
+import { ask } from './adapters/ai/index.js';
 
-`adapters/ai/aiRequest.ts`
+// Use Claude
+const claude = await ask('Explain quantum computing', {
+  provider: 'anthropic',
+  model: 'claude-sonnet-4-20250514'
+});
 
-```ts
-import { AICapability, AIModelDescriptor } from './aiTypes';
-
-export type AIRequest = {
-  requestId: string;
-
-  capability: AICapability;
-
-  model: AIModelDescriptor;
-
-  /** Input content (opaque to body) */
-  input: unknown;
-
-  /** Optional generation bounds */
-  constraints?: {
-    maxTokens?: number;
-    temperature?: number;
-    topP?: number;
-  };
-
-  requestedAt: number;
-
-  /** Execution governance references */
-  governance: {
-    executionRequestId: string;
-    authorityGrantId?: string;
-    policyTraceId?: string;
-    riskAssessmentId?: string;
-    simulationId?: string;
-  };
-};
+// Use GPT-4
+const gpt = await ask('Explain quantum computing', {
+  provider: 'openai',
+  model: 'gpt-4o'
+});
 ```
 
-The adapter records governance references; it does not evaluate them.
+### Conversation
 
-## AI Response (what came back)
+```typescript
+import { chat } from './adapters/ai/index.js';
 
-**File**
+const history = [
+  { role: 'user', content: 'My name is Alice' },
+  { role: 'assistant', content: 'Hello Alice!' }
+];
 
-`adapters/ai/aiResponse.ts`
-
-```ts
-export type AIResponse = {
-  requestId: string;
-
-  respondedAt: number;
-
-  output: unknown;
-
-  usage?: {
-    inputTokens?: number;
-    outputTokens?: number;
-    totalTokens?: number;
-  };
-
-  /** Explicit uncertainty + trust boundary */
-  trust: {
-    level: 'UNTRUSTED';
-    modelConfidence?: number;
-  };
-
-  metadata?: {
-    latencyMs?: number;
-    providerRequestId?: string;
-  };
-};
+const response = await chat(history, 'What is my name?');
+// response.content: "Your name is Alice"
 ```
 
-All AI output is UNTRUSTED by default.
+### Full control
 
-## External AI Adapter Interface
+```typescript
+import { aiRequest } from './adapters/ai/index.js';
 
-**File**
+const response = await aiRequest({
+  provider: 'anthropic',
+  prompt: 'Analyze this data',
+  system: 'You are a data analyst',
+  model: 'claude-sonnet-4-20250514',
+  maxTokens: 2000,
+  temperature: 0.7
+});
 
-`adapters/ai/aiAdapter.ts`
-
-```ts
-import { AIRequest } from './aiRequest';
-import { AIResponse } from './aiResponse';
-
-export interface ExternalAIAdapter {
-  /**
-   * Performs an AI inference after execution approval.
-   * No tool calls, no memory writes, no side effects.
-   */
-  infer(req: AIRequest): Promise<AIResponse>;
+if (response.success) {
+  console.log(response.content);
+  console.log('Tokens used:', response.usage?.total);
+} else {
+  console.error('Error:', response.error);
 }
 ```
 
-## Mandatory invariants (documented only)
+---
 
-All implementations must preserve:
+## Architecture
 
-- no AI calls without ExecutionArbiter approval
-- AI output is always UNTRUSTED
-- adapters do not call tools or trigger execution
-- adapters do not store memory
-- adapters do not interpret or rank responses
-- failures are surfaced, not retried silently
+```
+Body
+ └─ adapters/ai/
+    ├─ aiAdapter.ts      # Main adapter (provider selection)
+    ├─ aiTypes.ts        # Canonical types
+    ├─ index.ts          # Public exports
+    └─ providers/
+       ├─ anthropic.ts   # Claude API
+       └─ openai.ts      # OpenAI API
+```
 
-## Example (static request shape)
+---
 
-```json
+## Response Format
+
+All providers return the same structure:
+
+```typescript
 {
-  "requestId": "ai-req-789",
-  "capability": "CHAT_COMPLETION",
-  "model": {
-    "provider": "OPENAI",
-    "modelId": "gpt-4.1",
-    "locality": "REMOTE"
-  },
-  "input": {
-    "messages": [
-      { "role": "user", "content": "Summarize the document." }
-    ]
-  },
-  "requestedAt": 1710000000000,
-  "governance": {
-    "executionRequestId": "exec-req-456",
-    "policyTraceId": "policy-ai-read"
-  }
+  success: boolean;
+  content: string;        // Generated text
+  provider: 'anthropic' | 'openai';
+  model: string;
+  usage?: {
+    input: number;
+    output: number;
+    total: number;
+  };
+  error?: string;         // If success=false
 }
 ```
 
-## Biological mapping (sanity check)
+---
 
-| Biology | ALIVE |
-| --- | --- |
-| External stimulus | AI output |
-| Sensory noise | Hallucination risk |
-| Thalamic gate | Execution Arbiter |
-| Cortex | Core reasoning |
+## Prohibitions
 
-## One-sentence contract
+This adapter:
+- ❌ Does NOT parse intent
+- ❌ Does NOT engineer prompts
+- ❌ Does NOT interpret responses
+- ❌ Does NOT cache or remember
 
-External AI informs ALIVE; it never becomes ALIVE.
+Core owns cognition. This is just transport.
