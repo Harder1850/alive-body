@@ -1,79 +1,84 @@
-# ALIVE Body - System Connector
+# ALIVE Body
 
-Connects alive-body to alive-system via WebSocket.
+Execution layer for ALIVE. Body acts, Brain decides.
 
-## Files
+## Components
 
 ```
-nervous-system/
-├── system-connector.js    # WebSocket connection to alive-system
-├── observation-handler.js # Processes observations, uses AI adapter
-└── index.js               # Wires connector + handler
-start-body.js              # Standalone runner for testing
+alive-body/
+├── adapters/
+│   ├── ai/           # LLM access (Anthropic, OpenAI)
+│   ├── web/          # Website creation
+│   └── self-site/    # ALIVE's own documentation site
+├── core/
+│   ├── identity.js   # Who ALIVE is
+│   ├── memory.js     # Persistent memory
+│   ├── experience.js # Append-only experience log
+│   ├── cognition.js  # The cognitive loop
+│   └── index.js      # Core entry point
+├── nervous-system/
+│   ├── system-connector.js    # WebSocket to alive-system
+│   ├── observation-handler.js # Routes observations through Core
+│   └── index.js
+└── start-body.js     # Entry point
 ```
 
-## Installation
-
-1. Copy `nervous-system/` folder to `alive-body/nervous-system/`
-2. Copy `start-body.js` to `alive-body/start-body.js`
-3. Ensure `ws` is in package.json:
-   ```json
-   "dependencies": {
-     "ws": "^8.15.0"
-   }
-   ```
-4. Run `npm install`
-
-## Usage
-
-### Option 1: Standalone (for testing)
+## Setup
 
 ```bash
-cd alive-body
+npm install
+```
+
+## Running
+
+Requires `alive-system` running on port 7070.
+
+```bash
+# Set API key
+set ANTHROPIC_API_KEY=your-key-here   # Windows
+export ANTHROPIC_API_KEY=your-key-here # Mac/Linux
+
+# Start
 node start-body.js
 ```
 
-### Option 2: Integrate into existing entry point
+## What it does
 
-In your main entry file (e.g., `index.js`):
+1. Connects to alive-system (WebSocket)
+2. Receives observations (user messages)
+3. Routes through Core (perceive → remember → think → decide → learn)
+4. Executes actions via adapters
+5. Returns responses
 
-```javascript
-import { initSystemIntegration } from './nervous-system/index.js';
+## Adapters
 
-// Your existing initialization...
+| Adapter | Purpose |
+|---------|---------|
+| AI | Multi-provider LLM (Claude, GPT) |
+| Web | Create/manage websites |
+| Self-site | ALIVE's own documentation |
 
-// Add system integration
-initSystemIntegration();
+## Core
+
+- **Identity**: Who ALIVE is (immutable principles)
+- **Memory**: Facts, episodes, skills (persistent)
+- **Experience**: Append-only log of everything
+- **Cognition**: Single cognitive loop
+
+## Runtime Data
+
+These folders are created at runtime (gitignored):
+
+- `sites/` - Websites ALIVE creates
+- `memory/` - Persistent memory storage
+- `experience/` - Experience logs
+
+## Architecture
+
+```
+Host → System → Body → Core → LLM
+                  ↓
+              Adapters (AI, Web, File)
 ```
 
-## Requirements
-
-- alive-system running on port 7070
-- AI adapter configured with API keys:
-  ```bash
-  set ANTHROPIC_API_KEY=sk-ant-...
-  # or
-  set OPENAI_API_KEY=sk-...
-  ```
-
-## Signal Flow
-
-```
-Host (browser)
-    ↓ observation
-alive-system (7070)
-    ↓ observation
-alive-body
-    ↓ handleObservation()
-    ↓ ask() → AI adapter → LLM
-    ↓ render
-alive-system
-    ↓ render
-Host (browser)
-```
-
-## Startup Order
-
-1. `alive-system` (port 7070)
-2. `alive-body` (connects to system)
-3. `alive-host-ui` (port 3001)
+Body executes. Core decides. System routes.
