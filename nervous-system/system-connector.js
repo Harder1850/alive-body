@@ -19,6 +19,8 @@ import WebSocket from 'ws';
 const BASE_URL = process.env.ALIVE_SYSTEM_URL || 'ws://localhost:7070';
 const SYSTEM_URL = `${BASE_URL}/?type=body`;
 
+console.log('[system-connector] URL:', SYSTEM_URL);
+
 
 let socket = null;
 let connected = false;
