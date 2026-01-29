@@ -14,151 +14,127 @@
  * This is the spinal cord. System is the spine.
  */
 
-import WebSocket from "ws";
+import WebSocket from 'ws';
 
-const SYSTEM_WS_URL =
-  process.env.ALIVE_SYSTEM_URL || "ws://localhost:7070/?type=body";
+const SYSTEM_URL = 'ws://localhost:7070/?type=body';
 
 let socket = null;
-let reconnectTimer = null;
-const RECONNECT_INTERVAL = 5000;
+let connected = false;
+let observationHandler = null;
 
 /**
- * Handle incoming observation from alive-system.
- * Override this by calling setObservationHandler().
+ * Start the system connector.
+ * This connects Body to alive-system.
  */
-let observationHandler = async (observation) => {
-  // Default: echo back as text render
-  console.log("[system-connector] observation received:", observation.modality);
-  return {
-    render: {
-      canvas: "text",
-      content: {
-        text: `Body received: ${
-          typeof observation.raw === "string" ? observation.raw : "[data]"
-        }`,
-        status: "processed",
-      },
-    },
-  };
-};
+export function startSystemConnector() {
+  console.log('[system-connector] Connecting to alive-system...');
+  
+  socket = new WebSocket(SYSTEM_URL);
+  
+  socket.on('open', () => {
+    connected = true;
+    console.log('[system-connector] Connected to alive-system');
+  });
+  
+  socket.on('message', async (data) => {
+    try {
+      const msg = JSON.parse(data.toString());
+      console.log('[system-connector] Received:', msg.type);
+      
+      if (msg.type === 'observation') {
+        await handleObservation(msg);
+      }
+    } catch (err) {
+      console.error('[system-connector] Error processing message:', err);
+    }
+  });
+  
+  socket.on('close', () => {
+    connected = false;
+    console.log('[system-connector] Disconnected from alive-system');
+    
+    // Auto-reconnect after 3 seconds
+    setTimeout(() => {
+      console.log('[system-connector] Attempting reconnect...');
+      startSystemConnector();
+    }, 3000);
+  });
+  
+  socket.on('error', (err) => {
+    console.error('[system-connector] WebSocket error:', err.message);
+  });
+}
 
 /**
- * Set custom observation handler.
- * Handler receives observation, returns { render: { canvas, content } } or null.
+ * Handle an incoming observation.
+ */
+async function handleObservation(observation) {
+  console.log(`[system-connector] Observation (${observation.modality}):`, 
+    typeof observation.raw === 'string' ? observation.raw.slice(0, 100) : '[data]');
+  
+  if (observationHandler) {
+    try {
+      const render = await observationHandler(observation);
+      if (render) {
+        sendRender(render);
+      }
+    } catch (err) {
+      console.error('[system-connector] Handler error:', err);
+      sendRender({
+        type: 'render',
+        canvas: 'text',
+        content: { text: `Error: ${err.message}` }
+      });
+    }
+  } else {
+    // Default: echo back
+    sendRender({
+      type: 'render',
+      canvas: 'text',
+      content: { text: `Body received: ${observation.raw}` }
+    });
+  }
+}
+
+/**
+ * Send a render instruction to alive-system.
+ */
+export function sendRender(render) {
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    console.error('[system-connector] Cannot send render - not connected');
+    return false;
+  }
+  
+  // Ensure proper format
+  const msg = {
+    type: 'render',
+    canvas: render.canvas || 'text',
+    content: render.content || render
+  };
+  
+  console.log('[system-connector] Sending render:', msg.canvas);
+  socket.send(JSON.stringify(msg));
+  return true;
+}
+
+/**
+ * Set the observation handler.
+ * This is how Body processes observations.
  */
 export function setObservationHandler(handler) {
   observationHandler = handler;
 }
 
 /**
- * Send render instruction to alive-system.
+ * Check if connected.
  */
-export function sendRender(canvas, content) {
-  if (socket?.readyState === WebSocket.OPEN) {
-    socket.send(
-      JSON.stringify({
-        type: "render",
-        canvas,
-        content,
-      })
-    );
-  } else {
-    console.warn("[system-connector] Cannot send render - not connected");
-  }
-}
-
-/**
- * Start the system connector.
- */
-export function startSystemConnector() {
-  if (socket?.readyState === WebSocket.OPEN) {
-    console.log("[system-connector] Already connected");
-    return;
-  }
-
-  console.log("[system-connector] Connecting to", SYSTEM_WS_URL);
-  socket = new WebSocket(SYSTEM_WS_URL);
-
-  socket.on("open", () => {
-    console.log("[system-connector] Connected to alive-system");
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer);
-      reconnectTimer = null;
-    }
-  });
-
-  socket.on("message", async (data) => {
-    let msg;
-    try {
-      msg = JSON.parse(data.toString());
-    } catch (err) {
-      console.error("[system-connector] Failed to parse message:", err);
-      return;
-    }
-
-    // Only handle observations
-    if (msg.type !== "observation") {
-      console.log("[system-connector] Ignoring non-observation:", msg.type);
-      return;
-    }
-
-    try {
-      // Hand off to Body execution layer
-      const result = await observationHandler(msg);
-
-      // If execution produced a renderable result, send it back
-      if (result?.render) {
-        sendRender(result.render.canvas, result.render.content);
-      }
-    } catch (err) {
-      console.error("[system-connector] Observation handler error:", err);
-      // Send error render
-      sendRender("text", {
-        error: err.message,
-        status: "error",
-      });
-    }
-  });
-
-  socket.on("close", () => {
-    console.log("[system-connector] Disconnected from alive-system");
-    scheduleReconnect();
-  });
-
-  socket.on("error", (err) => {
-    console.error("[system-connector] WebSocket error:", err.message);
-  });
-}
-
-function scheduleReconnect() {
-  if (reconnectTimer) return;
-  console.log(
-    `[system-connector] Reconnecting in ${RECONNECT_INTERVAL / 1000}s...`
-  );
-  reconnectTimer = setTimeout(() => {
-    reconnectTimer = null;
-    startSystemConnector();
-  }, RECONNECT_INTERVAL);
-}
-
-/**
- * Stop the system connector.
- */
-export function stopSystemConnector() {
-  if (reconnectTimer) {
-    clearTimeout(reconnectTimer);
-    reconnectTimer = null;
-  }
-  if (socket) {
-    socket.close();
-    socket = null;
-  }
+export function isConnected() {
+  return connected && socket && socket.readyState === WebSocket.OPEN;
 }
 
 export default {
   start: startSystemConnector,
-  stop: stopSystemConnector,
   sendRender,
   setObservationHandler,
+  isConnected
 };
