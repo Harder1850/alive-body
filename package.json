@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "scripts": {
+    "start": "node start-body.js"
+  },
   "dependencies": {
     "express": "^4.22.1",
     "ws": "^8.15.0"
