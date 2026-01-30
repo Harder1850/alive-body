@@ -69,9 +69,16 @@
         .message.assistant {
             background: #334155;
         }
+        .message img {
+            max-width: 100%;
+            border-radius: 0.25rem;
+            margin-top: 0.5rem;
+        }
         .input-area {
             padding: 1rem;
             border-top: 1px solid #334155;
+        }
+        .input-row {
             display: flex;
             gap: 0.5rem;
         }
@@ -99,7 +106,7 @@
             background: #3b82f6;
             color: white;
         }
-        .mic-btn {
+        .mic-btn, .upload-btn {
             background: #475569;
             color: white;
             transition: all 0.2s;
@@ -112,6 +119,58 @@
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.1); }
         }
+        .drop-zone {
+            border: 2px dashed #475569;
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            font-size: 0.75rem;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+        .drop-zone.drag-over {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+        .drop-zone.has-file {
+            border-color: #22c55e;
+            color: #22c55e;
+        }
+        .file-preview {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: #334155;
+            border-radius: 0.25rem;
+            margin-bottom: 0.5rem;
+        }
+        .file-preview img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 0.25rem;
+        }
+        .file-preview .file-info {
+            flex: 1;
+            font-size: 0.75rem;
+            overflow: hidden;
+        }
+        .file-preview .file-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .file-preview .remove-file {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+        .hidden { display: none; }
         .hero {
             text-align: center;
             padding: 3rem 0;
@@ -205,12 +264,19 @@
                 <div class="status-dot"></div>
             </div>
             <div class="messages" id="messages">
-                <div class="message system">Connected. Say hello.</div>
+                <div class="message system">Connected. Say hello or drop a file.</div>
             </div>
             <div class="input-area">
-                <input type="text" id="input" placeholder="Type a message..." />
-                <button class="mic-btn" id="micBtn">🎤</button>
-                <button class="send-btn" id="sendBtn">→</button>
+                <div class="drop-zone" id="dropZone">
+                    📁 Drag & drop files here or click to browse
+                </div>
+                <input type="file" id="fileInput" class="hidden" multiple>
+                <div id="filePreview" class="hidden"></div>
+                <div class="input-row">
+                    <input type="text" id="input" placeholder="Type a message..." />
+                    <button class="mic-btn" id="micBtn">🎤</button>
+                    <button class="send-btn" id="sendBtn">→</button>
+                </div>
             </div>
         </div>
     </div>
@@ -220,6 +286,7 @@
         let socket = null;
         let recognition = null;
         let isRecording = false;
+        let pendingFiles = [];
 
         // Speech recognition setup
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -276,6 +343,68 @@
             btn.textContent = '🎤';
         }
 
+        // File handling
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const filePreview = document.getElementById('filePreview');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            pendingFiles = Array.from(files);
+            updateFilePreview();
+        }
+
+        function updateFilePreview() {
+            if (pendingFiles.length === 0) {
+                filePreview.classList.add('hidden');
+                dropZone.classList.remove('has-file');
+                return;
+            }
+
+            filePreview.classList.remove('hidden');
+            dropZone.classList.add('has-file');
+            
+            filePreview.innerHTML = pendingFiles.map((file, index) => {
+                const isImage = file.type.startsWith('image/');
+                const preview = isImage ? URL.createObjectURL(file) : '';
+                return `
+                    <div class="file-preview">
+                        ${isImage ? `<img src="${preview}" alt="${file.name}">` : '📄'}
+                        <div class="file-info">
+                            <div class="file-name">${file.name}</div>
+                            <div>${(file.size / 1024).toFixed(1)} KB</div>
+                        </div>
+                        <button class="remove-file" onclick="removeFile(${index})">✕</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function removeFile(index) {
+            pendingFiles.splice(index, 1);
+            updateFilePreview();
+        }
+
         function connect() {
             socket = new WebSocket(SYSTEM_URL);
             socket.onopen = () => addMessage('system', 'Connected to ALIVE');
@@ -291,27 +420,70 @@
             };
         }
 
-        function addMessage(type, text) {
+        function addMessage(type, text, imageData = null) {
             const messages = document.getElementById('messages');
             const div = document.createElement('div');
             div.className = 'message ' + type;
-            div.textContent = text;
+            
+            if (imageData) {
+                div.innerHTML = `<div>${text}</div><img src="${imageData}" alt="uploaded image">`;
+            } else {
+                div.textContent = text;
+            }
+            
             messages.appendChild(div);
             messages.scrollTop = messages.scrollHeight;
         }
 
-        function sendMessage() {
+        async function sendMessage() {
             const input = document.getElementById('input');
             const text = input.value.trim();
-            if (!text || !socket) return;
+            
+            if (!text && pendingFiles.length === 0) return;
+            if (!socket) return;
 
-            addMessage('user', text);
-            socket.send(JSON.stringify({
-                type: 'observation',
-                modality: 'text',
-                raw: text
-            }));
-            input.value = '';
+            // Process files first
+            for (const file of pendingFiles) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const data = e.target.result;
+                    const isImage = file.type.startsWith('image/');
+                    
+                    addMessage('user', `📎 ${file.name}`, isImage ? data : null);
+                    
+                    socket.send(JSON.stringify({
+                        type: 'observation',
+                        modality: isImage ? 'image' : 'file',
+                        raw: data,
+                        metadata: {
+                            filename: file.name,
+                            type: file.type,
+                            size: file.size
+                        }
+                    }));
+                };
+                
+                if (file.type.startsWith('image/')) {
+                    reader.readAsDataURL(file);
+                } else {
+                    reader.readAsDataURL(file);
+                }
+            }
+
+            // Clear pending files
+            pendingFiles = [];
+            updateFilePreview();
+
+            // Send text message
+            if (text) {
+                addMessage('user', text);
+                socket.send(JSON.stringify({
+                    type: 'observation',
+                    modality: 'text',
+                    raw: text
+                }));
+                input.value = '';
+            }
         }
 
         document.getElementById('sendBtn').addEventListener('click', sendMessage);
