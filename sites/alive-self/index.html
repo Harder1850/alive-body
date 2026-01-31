@@ -37,12 +37,43 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 0.75rem;
         }
         .chat-header h2 { font-size: 1rem; }
         .status-dot {
             width: 8px; height: 8px;
             background: #22c55e;
             border-radius: 50%;
+        }
+        .status-dot.offline {
+            background: #ef4444;
+        }
+        .ws-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .ws-controls button {
+            padding: 0.35rem 0.6rem;
+            border-radius: 0.4rem;
+            border: none;
+            background: #334155;
+            color: #e2e8f0;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+        .ws-controls button.connected {
+            background: #ef4444;
+        }
+        .ws-input {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #475569;
+            border-radius: 0.5rem;
+            background: #0f172a;
+            color: #e2e8f0;
+            font-size: 0.75rem;
+            margin-bottom: 0.75rem;
         }
         .messages {
             flex: 1;
@@ -261,12 +292,17 @@
         <div class="chat-panel">
             <div class="chat-header">
                 <h2>Talk to ALIVE</h2>
-                <div class="status-dot"></div>
+                <div class="ws-controls">
+                    <span id="wsStatus">Offline</span>
+                    <div class="status-dot offline" id="wsDot"></div>
+                    <button id="connectBtn">Connect</button>
+                </div>
             </div>
             <div class="messages" id="messages">
                 <div class="message system">Connected. Say hello or drop a file.</div>
             </div>
             <div class="input-area">
+                <input type="text" id="wsUrl" class="ws-input" placeholder="wss://your-railway-url" />
                 <div class="drop-zone" id="dropZone">
                     📁 Drag & drop files here or click to browse
                 </div>
@@ -282,7 +318,14 @@
     </div>
 
     <script>
-        const SYSTEM_URL = 'ws://localhost:7070/?type=host';
+        const wsInput = document.getElementById('wsUrl');
+        const wsStatus = document.getElementById('wsStatus');
+        const wsDot = document.getElementById('wsDot');
+        const connectBtn = document.getElementById('connectBtn');
+        const defaultUrl = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.hostname}:7070/?type=host`;
+
+        wsInput.value = defaultUrl;
+
         let socket = null;
         let recognition = null;
         let isRecording = false;
@@ -405,16 +448,37 @@
             updateFilePreview();
         }
 
+        function setStatus(connected) {
+            wsStatus.textContent = connected ? 'Online' : 'Offline';
+            wsDot.classList.toggle('offline', !connected);
+            connectBtn.textContent = connected ? 'Disconnect' : 'Connect';
+            connectBtn.classList.toggle('connected', connected);
+        }
+
         function connect() {
-            socket = new WebSocket(SYSTEM_URL);
-            socket.onopen = () => addMessage('system', 'Connected to ALIVE');
+            const url = wsInput.value.trim();
+            if (!url) {
+                addMessage('system', 'Please enter a WebSocket URL');
+                return;
+            }
+
+            socket = new WebSocket(url);
+            socket.onopen = () => {
+                setStatus(true);
+                addMessage('system', 'Connected to ALIVE');
+            };
             socket.onmessage = (event) => {
                 const msg = JSON.parse(event.data);
-                if (msg.type === 'render' && msg.content) {
+                if (msg.type === 'system') {
+                    addMessage('system', msg.message || 'System message');
+                } else if (msg.type === 'render' && msg.content) {
                     addMessage('assistant', msg.content.text || JSON.stringify(msg.content));
+                } else {
+                    addMessage('assistant', JSON.stringify(msg));
                 }
             };
             socket.onclose = () => {
+                setStatus(false);
                 addMessage('system', 'Disconnected. Reconnecting...');
                 setTimeout(connect, 3000);
             };
@@ -440,7 +504,10 @@
             const text = input.value.trim();
             
             if (!text && pendingFiles.length === 0) return;
-            if (!socket) return;
+            if (!socket || socket.readyState !== WebSocket.OPEN) {
+                addMessage('system', 'Socket not connected yet.');
+                return;
+            }
 
             // Process files first
             for (const file of pendingFiles) {
@@ -485,6 +552,14 @@
                 input.value = '';
             }
         }
+
+        connectBtn.addEventListener('click', () => {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.close();
+                return;
+            }
+            connect();
+        });
 
         document.getElementById('sendBtn').addEventListener('click', sendMessage);
         document.getElementById('micBtn').addEventListener('click', toggleRecording);
