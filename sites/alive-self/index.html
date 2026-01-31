@@ -1,575 +1,168 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ALIVE</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            color: #e2e8f0;
-            min-height: 100vh;
-        }
-        .header {
-            background: #1e293b;
-            padding: 1rem 2rem;
-            border-bottom: 1px solid #334155;
-        }
-        .header h1 { color: #38bdf8; font-size: 1.5rem; }
-        .main { display: flex; height: calc(100vh - 60px); }
-        .content {
-            flex: 1;
-            padding: 2rem;
-            overflow-y: auto;
-        }
-        .chat-panel {
-            width: 350px;
-            background: #1e293b;
-            border-left: 1px solid #334155;
-            display: flex;
-            flex-direction: column;
-        }
-        .chat-header {
-            padding: 1rem;
-            border-bottom: 1px solid #334155;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        .chat-header h2 { font-size: 1rem; }
-        .status-dot {
-            width: 8px; height: 8px;
-            background: #22c55e;
-            border-radius: 50%;
-        }
-        .status-dot.offline {
-            background: #ef4444;
-        }
-        .ws-controls {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .ws-controls button {
-            padding: 0.35rem 0.6rem;
-            border-radius: 0.4rem;
-            border: none;
-            background: #334155;
-            color: #e2e8f0;
-            cursor: pointer;
-            font-size: 0.75rem;
-        }
-        .ws-controls button.connected {
-            background: #ef4444;
-        }
-        .ws-input {
-            width: 100%;
-            padding: 0.5rem 0.75rem;
-            border: 1px solid #475569;
-            border-radius: 0.5rem;
-            background: #0f172a;
-            color: #e2e8f0;
-            font-size: 0.75rem;
-            margin-bottom: 0.75rem;
-        }
-        .messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1rem;
-        }
-        .message {
-            margin-bottom: 1rem;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            max-width: 90%;
-        }
-        .message.system {
-            background: #334155;
-            color: #94a3b8;
-            font-size: 0.875rem;
-            text-align: center;
-            max-width: 100%;
-        }
-        .message.user {
-            background: #3b82f6;
-            margin-left: auto;
-        }
-        .message.assistant {
-            background: #334155;
-        }
-        .message img {
-            max-width: 100%;
-            border-radius: 0.25rem;
-            margin-top: 0.5rem;
-        }
-        .input-area {
-            padding: 1rem;
-            border-top: 1px solid #334155;
-        }
-        .input-row {
-            display: flex;
-            gap: 0.5rem;
-        }
-        .input-area input {
-            flex: 1;
-            padding: 0.75rem;
-            border: 1px solid #475569;
-            border-radius: 0.5rem;
-            background: #0f172a;
-            color: #e2e8f0;
-            font-size: 0.875rem;
-        }
-        .input-area input:focus {
-            outline: none;
-            border-color: #3b82f6;
-        }
-        .input-area button {
-            padding: 0.75rem 1rem;
-            border: none;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-        .send-btn {
-            background: #3b82f6;
-            color: white;
-        }
-        .mic-btn, .upload-btn {
-            background: #475569;
-            color: white;
-            transition: all 0.2s;
-        }
-        .mic-btn.recording {
-            background: #ef4444;
-            animation: pulse 1s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-        .drop-zone {
-            border: 2px dashed #475569;
-            border-radius: 0.5rem;
-            padding: 0.5rem;
-            text-align: center;
-            margin-bottom: 0.5rem;
-            font-size: 0.75rem;
-            color: #64748b;
-            transition: all 0.2s;
-        }
-        .drop-zone.drag-over {
-            border-color: #3b82f6;
-            background: rgba(59, 130, 246, 0.1);
-            color: #3b82f6;
-        }
-        .drop-zone.has-file {
-            border-color: #22c55e;
-            color: #22c55e;
-        }
-        .file-preview {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem;
-            background: #334155;
-            border-radius: 0.25rem;
-            margin-bottom: 0.5rem;
-        }
-        .file-preview img {
-            width: 40px;
-            height: 40px;
-            object-fit: cover;
-            border-radius: 0.25rem;
-        }
-        .file-preview .file-info {
-            flex: 1;
-            font-size: 0.75rem;
-            overflow: hidden;
-        }
-        .file-preview .file-name {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .file-preview .remove-file {
-            background: none;
-            border: none;
-            color: #ef4444;
-            cursor: pointer;
-            padding: 0.25rem;
-        }
-        .hidden { display: none; }
-        .hero {
-            text-align: center;
-            padding: 3rem 0;
-        }
-        .hero .status {
-            display: inline-block;
-            background: #166534;
-            color: #22c55e;
-            padding: 0.25rem 1rem;
-            border-radius: 1rem;
-            font-size: 0.875rem;
-            margin-bottom: 1rem;
-        }
-        .hero h2 {
-            font-size: 3rem;
-            color: #f8fafc;
-            margin-bottom: 0.5rem;
-        }
-        .hero .tagline {
-            color: #64748b;
-            font-size: 1.125rem;
-            margin-bottom: 0.5rem;
-        }
-        .hero .desc {
-            color: #94a3b8;
-        }
-        .section-title {
-            color: #38bdf8;
-            font-size: 1.25rem;
-            margin: 2rem 0 1rem;
-        }
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
-        .card {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 0.5rem;
-            padding: 1.25rem;
-        }
-        .card h3 {
-            color: #38bdf8;
-            font-size: 1rem;
-            margin-bottom: 0.5rem;
-        }
-        .card p {
-            color: #94a3b8;
-            font-size: 0.875rem;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ALIVE</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="header">
-        <h1>ALIVE</h1>
+  <nav>
+    <a href="index.html" class="logo">ALIVE</a>
+    <div class="nav-links">
+      <a href="architecture.html">Architecture</a>
+      <a href="capabilities.html">Capabilities</a>
+      <a href="status.html">Status</a>
     </div>
-    <div class="main">
-        <div class="content">
-            <div class="hero">
-                <div class="status">● Online</div>
-                <h2>ALIVE</h2>
-                <p class="tagline">Adaptive Learning Intelligence with Versatile Evolution</p>
-                <p class="desc">An AI system with persistent identity, memory, and the ability to act.</p>
-            </div>
+  </nav>
 
-            <h3 class="section-title">Core Principles</h3>
-            <div class="cards">
-                <div class="card">
-                    <h3>Body acts, Brain decides</h3>
-                    <p>Clean separation between execution and cognition.</p>
-                </div>
-                <div class="card">
-                    <h3>Append-only experience</h3>
-                    <p>Nothing is forgotten. Every action is logged.</p>
-                </div>
-                <div class="card">
-                    <h3>Bounded authority</h3>
-                    <p>I know my limits.</p>
-                </div>
-                <div class="card">
-                    <h3>Transparent operation</h3>
-                    <p>I explain my reasoning.</p>
-                </div>
-            </div>
-        </div>
+  <main class="with-chat">
+    <section class="hero">
+      <div class="status-badge" id="status-badge">● Connecting...</div>
+      <h1>ALIVE</h1>
+      <p class="subtitle">Adaptive Learning Intelligence with Versatile Evolution</p>
+      <p class="description">An AI system with persistent identity, memory, and the ability to act.</p>
+    </section>
 
-        <div class="chat-panel">
-            <div class="chat-header">
-                <h2>Talk to ALIVE</h2>
-                <div class="ws-controls">
-                    <span id="wsStatus">Offline</span>
-                    <div class="status-dot offline" id="wsDot"></div>
-                    <button id="connectBtn">Connect</button>
-                </div>
-            </div>
-            <div class="messages" id="messages">
-                <div class="message system">Connected. Say hello or drop a file.</div>
-            </div>
-            <div class="input-area">
-                <input type="text" id="wsUrl" class="ws-input" placeholder="wss://your-railway-url" />
-                <div class="drop-zone" id="dropZone">
-                    📁 Drag & drop files here or click to browse
-                </div>
-                <input type="file" id="fileInput" class="hidden" multiple>
-                <div id="filePreview" class="hidden"></div>
-                <div class="input-row">
-                    <input type="text" id="input" placeholder="Type a message..." />
-                    <button class="mic-btn" id="micBtn">🎤</button>
-                    <button class="send-btn" id="sendBtn">→</button>
-                </div>
-            </div>
+    <section class="principles">
+      <h2>Core Principles</h2>
+      <div class="principle-grid">
+        <div class="principle">
+          <h3>Body acts, Brain decides</h3>
+          <p>Clean separation between execution and cognition.</p>
         </div>
+        <div class="principle">
+          <h3>Append-only experience</h3>
+          <p>Nothing is forgotten. Every action is logged.</p>
+        </div>
+        <div class="principle">
+          <h3>Bounded authority</h3>
+          <p>I know my limits.</p>
+        </div>
+        <div class="principle">
+          <h3>Transparent operation</h3>
+          <p>I explain my reasoning.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="quick-links">
+      <h2>Explore</h2>
+      <div class="link-grid">
+        <a href="architecture.html" class="link-card">
+          <h3>Architecture →</h3>
+          <p>System design</p>
+        </a>
+        <a href="capabilities.html" class="link-card">
+          <h3>Capabilities →</h3>
+          <p>What I can do</p>
+        </a>
+        <a href="status.html" class="link-card">
+          <h3>Status →</h3>
+          <p>Live state</p>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <!-- Chat Panel -->
+  <aside class="chat-panel">
+    <div class="chat-header">
+      <span>Talk to ALIVE</span>
+      <span class="connection-status" id="conn-status">●</span>
     </div>
+    <div class="chat-messages" id="messages">
+      <div class="message system">Connected. Say hello.</div>
+    </div>
+    <div class="chat-input">
+      <input type="text" id="input" placeholder="Type a message..." autocomplete="off">
+      <button id="send">→</button>
+    </div>
+  </aside>
 
-    <script>
-        const wsInput = document.getElementById('wsUrl');
-        const wsStatus = document.getElementById('wsStatus');
-        const wsDot = document.getElementById('wsDot');
-        const connectBtn = document.getElementById('connectBtn');
-        const wsProtocol = location.protocol === 'https:' ? 'wss' : 'ws';
-        const wsHost = location.hostname || 'localhost';
-        const defaultUrl = `${wsProtocol}://${wsHost}:7070/?type=host`;
+  <footer>
+    <p>Built and maintained by ALIVE.</p>
+  </footer>
 
-        wsInput.value = defaultUrl;
+  <script>
+    const SYSTEM_URL = 'ws://localhost:7070/?type=host';
+    let socket = null;
+    let connected = false;
 
-        let socket = null;
-        let recognition = null;
-        let isRecording = false;
-        let pendingFiles = [];
+    const messages = document.getElementById('messages');
+    const input = document.getElementById('input');
+    const sendBtn = document.getElementById('send');
+    const connStatus = document.getElementById('conn-status');
+    const statusBadge = document.getElementById('status-badge');
 
-        // Speech recognition setup
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.lang = 'en-US';
+    function connect() {
+      socket = new WebSocket(SYSTEM_URL);
 
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                document.getElementById('input').value = transcript;
-                stopRecording();
-                sendMessage();
-            };
+      socket.onopen = () => {
+        connected = true;
+        connStatus.className = 'connection-status online';
+        statusBadge.textContent = '● Online';
+        statusBadge.className = 'status-badge online';
+        addMessage('Connected to ALIVE', 'system');
+      };
 
-            recognition.onerror = (event) => {
-                console.error('Speech error:', event.error);
-                stopRecording();
-                addMessage('system', 'Voice error: ' + event.error);
-            };
-
-            recognition.onend = () => stopRecording();
+      socket.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === 'render' && msg.content) {
+            const text = msg.content.text || msg.content.status || JSON.stringify(msg.content);
+            addMessage(text, 'alive');
+          }
+        } catch (e) {
+          console.error('Parse error:', e);
         }
+      };
 
-        function toggleRecording() {
-            if (!recognition) {
-                addMessage('system', 'Voice not supported in this browser');
-                return;
-            }
-            if (isRecording) {
-                recognition.stop();
-            } else {
-                startRecording();
-            }
-        }
+      socket.onclose = () => {
+        connected = false;
+        connStatus.className = 'connection-status offline';
+        statusBadge.textContent = '● Offline';
+        statusBadge.className = 'status-badge offline';
+        addMessage('Disconnected. Reconnecting...', 'system');
+        setTimeout(connect, 3000);
+      };
 
-        function startRecording() {
-            isRecording = true;
-            const btn = document.getElementById('micBtn');
-            btn.classList.add('recording');
-            btn.textContent = '⏹';
-            try {
-                recognition.start();
-            } catch (e) {
-                stopRecording();
-            }
-        }
+      socket.onerror = () => {
+        connStatus.className = 'connection-status offline';
+      };
+    }
 
-        function stopRecording() {
-            isRecording = false;
-            const btn = document.getElementById('micBtn');
-            btn.classList.remove('recording');
-            btn.textContent = '🎤';
-        }
+    function addMessage(text, type) {
+      const div = document.createElement('div');
+      div.className = 'message ' + type;
+      div.textContent = text;
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+    }
 
-        // File handling
-        const dropZone = document.getElementById('dropZone');
-        const fileInput = document.getElementById('fileInput');
-        const filePreview = document.getElementById('filePreview');
+    function send() {
+      const text = input.value.trim();
+      if (!text || !connected) return;
 
-        dropZone.addEventListener('click', () => fileInput.click());
+      addMessage(text, 'user');
 
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('drag-over');
-        });
+      socket.send(JSON.stringify({
+        type: 'observation',
+        source: 'self-site',
+        modality: 'text',
+        raw: text
+      }));
 
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('drag-over');
-        });
+      input.value = '';
+    }
 
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('drag-over');
-            handleFiles(e.dataTransfer.files);
-        });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') send();
+    });
 
-        fileInput.addEventListener('change', (e) => {
-            handleFiles(e.target.files);
-        });
+    sendBtn.addEventListener('click', send);
 
-        function handleFiles(files) {
-            pendingFiles = Array.from(files);
-            updateFilePreview();
-        }
-
-        function updateFilePreview() {
-            if (pendingFiles.length === 0) {
-                filePreview.classList.add('hidden');
-                dropZone.classList.remove('has-file');
-                return;
-            }
-
-            filePreview.classList.remove('hidden');
-            dropZone.classList.add('has-file');
-            
-            filePreview.innerHTML = pendingFiles.map((file, index) => {
-                const isImage = file.type.startsWith('image/');
-                const preview = isImage ? URL.createObjectURL(file) : '';
-                return `
-                    <div class="file-preview">
-                        ${isImage ? `<img src="${preview}" alt="${file.name}">` : '📄'}
-                        <div class="file-info">
-                            <div class="file-name">${file.name}</div>
-                            <div>${(file.size / 1024).toFixed(1)} KB</div>
-                        </div>
-                        <button class="remove-file" onclick="removeFile(${index})">✕</button>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function removeFile(index) {
-            pendingFiles.splice(index, 1);
-            updateFilePreview();
-        }
-
-        function setStatus(connected) {
-            wsStatus.textContent = connected ? 'Online' : 'Offline';
-            wsDot.classList.toggle('offline', !connected);
-            connectBtn.textContent = connected ? 'Disconnect' : 'Connect';
-            connectBtn.classList.toggle('connected', connected);
-        }
-
-        function connect() {
-            const url = wsInput.value.trim();
-            if (!url) {
-                addMessage('system', 'Please enter a WebSocket URL');
-                return;
-            }
-
-            socket = new WebSocket(url);
-            socket.onopen = () => {
-                setStatus(true);
-                addMessage('system', 'Connected to ALIVE');
-            };
-            socket.onmessage = (event) => {
-                const msg = JSON.parse(event.data);
-                if (msg.type === 'system') {
-                    addMessage('system', msg.message || 'System message');
-                } else if (msg.type === 'render' && msg.content) {
-                    addMessage('assistant', msg.content.text || JSON.stringify(msg.content));
-                } else {
-                    addMessage('assistant', JSON.stringify(msg));
-                }
-            };
-            socket.onclose = () => {
-                setStatus(false);
-                addMessage('system', 'Disconnected. Reconnecting...');
-                setTimeout(connect, 3000);
-            };
-        }
-
-        function addMessage(type, text, imageData = null) {
-            const messages = document.getElementById('messages');
-            const div = document.createElement('div');
-            div.className = 'message ' + type;
-            
-            if (imageData) {
-                div.innerHTML = `<div>${text}</div><img src="${imageData}" alt="uploaded image">`;
-            } else {
-                div.textContent = text;
-            }
-            
-            messages.appendChild(div);
-            messages.scrollTop = messages.scrollHeight;
-        }
-
-        async function sendMessage() {
-            const input = document.getElementById('input');
-            const text = input.value.trim();
-            
-            if (!text && pendingFiles.length === 0) return;
-            if (!socket || socket.readyState !== WebSocket.OPEN) {
-                addMessage('system', 'Socket not connected yet.');
-                return;
-            }
-
-            // Process files first
-            for (const file of pendingFiles) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const data = e.target.result;
-                    const isImage = file.type.startsWith('image/');
-                    
-                    addMessage('user', `📎 ${file.name}`, isImage ? data : null);
-                    
-                    socket.send(JSON.stringify({
-                        type: 'observation',
-                        modality: isImage ? 'image' : 'file',
-                        raw: data,
-                        metadata: {
-                            filename: file.name,
-                            type: file.type,
-                            size: file.size
-                        }
-                    }));
-                };
-                
-                if (file.type.startsWith('image/')) {
-                    reader.readAsDataURL(file);
-                } else {
-                    reader.readAsDataURL(file);
-                }
-            }
-
-            // Clear pending files
-            pendingFiles = [];
-            updateFilePreview();
-
-            // Send text message
-            if (text) {
-                addMessage('user', text);
-                socket.send(JSON.stringify({
-                    type: 'observation',
-                    modality: 'text',
-                    raw: text
-                }));
-                input.value = '';
-            }
-        }
-
-        connectBtn.addEventListener('click', () => {
-            if (socket && socket.readyState === WebSocket.OPEN) {
-                socket.close();
-                return;
-            }
-            connect();
-        });
-
-        document.getElementById('sendBtn').addEventListener('click', sendMessage);
-        document.getElementById('micBtn').addEventListener('click', toggleRecording);
-        document.getElementById('input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
-
-        connect();
-    </script>
+    connect();
+  </script>
 </body>
 </html>

@@ -7,7 +7,7 @@
 import { startSystemConnector, setObservationHandler } from './nervous-system/system-connector.js';
 import { handleObservation, initWithCore } from './nervous-system/observation-handler.js';
 import selfSite from './adapters/self-site/index.js';
-import core from './core/index.js';
+// import core from './core/index.js';
 
 console.log(`
 ╔═══════════════════════════════════════════════════════╗
@@ -51,7 +51,7 @@ async function init() {
   // Update status periodically
   setInterval(async () => {
     try {
-      const coreStatus = core.getStatus();
+      const coreStatus = { identity: 'ALIVE', version: '1.0.0', memories: { factCount: 0, episodeCount: 0 }, experiences: { total: 0 } };
       
       await selfSite.updateStatus({
         system: { running: true },
@@ -70,7 +70,7 @@ async function init() {
   // Initial status update
   setTimeout(async () => {
     try {
-      const coreStatus = core.getStatus();
+      const coreStatus = { identity: 'ALIVE', version: '1.0.0', memories: { factCount: 0, episodeCount: 0 }, experiences: { total: 0 } };
       await selfSite.updateStatus({
         system: { running: true },
         connections: { hosts: 1, bodies: 1 },
@@ -102,3 +102,4 @@ process.on('SIGINT', async () => {
   await selfSite.logActivity('ALIVE Body shutting down');
   process.exit(0);
 });
+

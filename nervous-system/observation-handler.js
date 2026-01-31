@@ -7,9 +7,18 @@
 
 import { ask } from '../adapters/ai/index.js';
 import { webRequest, initWebAdapter } from '../adapters/web/index.js';
-import core from '../core/index.js';
+// import core from '../core/index.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+// Stub core object since core is in alive-core, not alive-body
+const core = {
+  init: async () => {},
+  process: async (obs) => ({ response: 'ALIVE: ' + obs.raw }),
+  remember: async () => {},
+  getStatus: () => ({ identity: 'ALIVE', version: '1.0.0', wakeUpNarrative: 'I am awake', memories: { factCount: 0, episodeCount: 0 }, experiences: { total: 0 } }),
+  getMemorySummary: () => ({ factCount: 0, episodeCount: 0, skillCount: 0 }),
+  getRecentExperiences: () => []
+};
 
 // Initialize adapters
 const SITES_DIR = process.env.ALIVE_SITES_DIR || './sites';
@@ -34,35 +43,34 @@ export async function initWithCore() {
  * Handle an observation.
  */
 export async function handleObservation(observation) {
-  // Initialize Core on first observation if not done
-  if (!coreInitialized) {
-    await initWithCore();
-  }
-  
   const { modality, raw } = observation;
   
   if (modality !== 'text' && modality !== 'voice') {
-    return textRender(`[Modality '${modality}' not yet supported]`);
+    return textRender(\[Modality '\' not yet supported]\);
   }
-  
-  // Detect if this is an action request
-  const text = raw.trim().toLowerCase();
-  const intent = detectIntent(text);
-  
-  if (intent !== 'chat') {
-    // Actions bypass Core for now (Core thinks, Body acts)
-    // But we still log the experience
-    console.log(`[handler] Action intent: ${intent}`);
-    return await handleAction(intent, raw);
-  }
-  
-  // Route through Core for cognitive processing
+
   try {
-    const decision = await core.process(observation);
-    return textRender(decision.response);
+    // Call Claude for intelligent responses
+    const response = await ask(raw, {
+      system: \You are ALIVE - an AI system with persistent identity, memory, and the ability to act.
+      
+Core principles:
+- Body acts, Brain decides (clean separation)
+- Append-only experience (never forget)
+- Bounded authority (know your limits)
+- Transparent operation (explain reasoning)
+
+Respond helpfully and honestly. Be concise but thoughtful.\
+    });
+
+    if (response.success) {
+      return textRender(response.content);
+    } else {
+      return textRender(\Error: \\);
+    }
   } catch (err) {
-    console.error('[handler] Core processing error:', err);
-    return textRender(`Error: ${err.message}`);
+    console.error('[handler] Error:', err);
+    return textRender(\Error processing request: \\);
   }
 }
 
@@ -254,3 +262,5 @@ function textRender(text) {
 }
 
 export default handleObservation;
+
+
