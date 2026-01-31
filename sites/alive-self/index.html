@@ -322,7 +322,9 @@
         const wsStatus = document.getElementById('wsStatus');
         const wsDot = document.getElementById('wsDot');
         const connectBtn = document.getElementById('connectBtn');
-        const defaultUrl = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.hostname}:7070/?type=host`;
+        const wsProtocol = location.protocol === 'https:' ? 'wss' : 'ws';
+        const wsHost = location.hostname || 'localhost';
+        const defaultUrl = `${wsProtocol}://${wsHost}:7070/?type=host`;
 
         wsInput.value = defaultUrl;
 
