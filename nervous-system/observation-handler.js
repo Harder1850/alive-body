@@ -13,6 +13,11 @@ function textRender(text) {
   };
 }
 
+export async function initWithCore() {
+  console.log('[handler] Initializing...');
+  return true;
+}
+
 export async function handleObservation(observation) {
   const { modality, raw } = observation;
   
