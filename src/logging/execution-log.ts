@@ -15,3 +15,7 @@ export function recordExecution(entry: ExecutionLogEntry) {
 export function getExecutionLog() {
   return log;
 }
+
+export function getLog() {
+  return log;
+}
