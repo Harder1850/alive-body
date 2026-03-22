@@ -1,12 +1,17 @@
-/** Logs all action executions. */
-export class ExecutionLog {
-  private entries: unknown[] = [];
+export interface ExecutionLogEntry {
+  timestamp: number;
+  signalId: string;
+  decisionId: string;
+  actionType: string;
+  result: string;
+}
 
-  log(_action: unknown): void {
-    this.entries.push({ ..._action as object, ts: Date.now() });
-  }
+const log: ExecutionLogEntry[] = [];
 
-  getAll(): unknown[] {
-    return [...this.entries];
-  }
+export function recordExecution(entry: ExecutionLogEntry) {
+  log.push(entry);
+}
+
+export function getExecutionLog() {
+  return log;
 }

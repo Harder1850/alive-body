@@ -1,6 +1,29 @@
 # ALIVE Body
 
-> **Constitution defines → Runtime governs → Mind thinks → Body acts → Interface displays**
+## Commitment
+
+This repository interfaces ALIVE with the external world.
+
+It is responsible for:
+- input ingestion (signals)
+- output execution (actuators)
+- safety systems and firewalling
+- execution logging
+- safe-state control
+
+It may act immediately for safety.
+
+It does not:
+- interpret meaning
+- make decisions
+- perform reasoning
+- define or enforce policy
+
+Body executes. It does not think.
+
+## Architecture Spine
+
+Constitution defines → Runtime governs → Mind thinks → Body acts → Interface displays
 
 ## Purpose
 Sensorimotor and safety layer. Interfaces with the external world and enforces boundary protection.

@@ -1,9 +1,9 @@
-/**
- * Executor — carries out validated actions.
- * Only executes. Does NOT decide or validate (that's Runtime/Firewall).
- */
-export class Executor {
-  execute(_action: unknown): void {
-    // TODO: implement action execution
+import type { Action } from '../../../alive-constitution/contracts/action';
+
+export function executeAction(action: Action): string {
+  if (action.type === 'display_text') {
+    return action.payload;
   }
+
+  return 'Unsupported action';
 }

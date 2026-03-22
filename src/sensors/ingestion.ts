@@ -1,7 +1,12 @@
-/** Raw input ingestion from external sources. */
-export class Ingestion {
-  ingest(_raw: unknown): unknown {
-    // TODO: implement
-    return null;
-  }
+import type { Signal } from '../../../alive-constitution/contracts/signal';
+
+export function ingestInput(input: string): Signal {
+  return {
+    id: crypto.randomUUID(),
+    source: 'interface',
+    raw_content: input,
+    timestamp: Date.now(),
+    firewall_status: 'pending',
+    quality_score: 1,
+  };
 }
