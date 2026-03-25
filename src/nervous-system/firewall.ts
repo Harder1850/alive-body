@@ -4,6 +4,6 @@ export function firewallCheck(signal: Signal): Signal {
   // Minimal pass-through for Slice 1
   return {
     ...signal,
-    firewall_status: 'passed',
+    firewall_status: 'cleared',
   };
 }
