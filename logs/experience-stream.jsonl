@@ -1,1 +1,9 @@
 {"id":"d92424ee-0091-4982-a879-f65dfba8459b","source":"telemetry","raw_content":{"usage_percent":8.32,"core_count":12},"timestamp":1774666567362,"threat_flag":false,"firewall_status":"pending"}
+{"kind":"action_dispatched","timestamp":1774675199494,"signal_id":"","data":{"decision_id":"","action_type":"display_text"}}
+{"kind":"action_dispatched","timestamp":1774675199495,"signal_id":"86b2ddbb-db3e-49be-95b4-3d740e472532","data":{"decision_id":"3ab70be8-131d-4085-ba85-8172fcc2c662","action_type":"display_text"}}
+{"kind":"action_dispatched","timestamp":1774675199741,"signal_id":"","data":{"decision_id":"","action_type":"display_text"}}
+{"kind":"action_dispatched","timestamp":1774675199743,"signal_id":"4c3a4bd5-d471-40b3-90ff-d5f44184a8fc","data":{"decision_id":"816e6727-66e1-4881-ac7b-2b37e7d14af5","action_type":"display_text"}}
+{"kind":"action_dispatched","timestamp":1774675253830,"signal_id":"","data":{"decision_id":"","action_type":"display_text"}}
+{"kind":"action_dispatched","timestamp":1774675253830,"signal_id":"5b67a20b-57d8-4821-82e6-55fbe9020df6","data":{"decision_id":"bd2e3b54-5e36-4d59-82a3-c55bd3ea29b3","action_type":"display_text"}}
+{"kind":"action_dispatched","timestamp":1774675254084,"signal_id":"","data":{"decision_id":"","action_type":"display_text"}}
+{"kind":"action_dispatched","timestamp":1774675254085,"signal_id":"bbb54686-d430-4847-b46f-9a50981dc1d3","data":{"decision_id":"b88bcac8-4283-41e6-9c68-13a5df9dcdcd","action_type":"display_text"}}
