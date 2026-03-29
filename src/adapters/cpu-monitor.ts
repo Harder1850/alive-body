@@ -15,8 +15,8 @@
  */
 
 import * as os from 'os';
-import { makeSignal } from '../../../../alive-constitution/contracts/signal';
-import type { Signal } from '../../../../alive-constitution/contracts/signal';
+import { makeSignal } from '../../../alive-constitution/contracts/signal';
+import type { Signal } from '../../../alive-constitution/contracts/signal';
 
 // ─── Thresholds (structural — not semantic) ───────────────────────────────────
 

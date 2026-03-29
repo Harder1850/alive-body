@@ -111,4 +111,3 @@ function inspect(signal) {
     }
     return { signal: normalizedSignal, blocked: false, was_truncated };
 }
-//# sourceMappingURL=firewall.js.map

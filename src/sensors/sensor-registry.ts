@@ -9,7 +9,7 @@
  * That responsibility belongs to alive-mind via the STG path.
  */
 
-import type { Signal } from '../../../alive-constitution/contracts/signal';
+import { makeSignal, type Signal } from '../../../alive-constitution/contracts/signal';
 
 export interface SensorSchema {
   /** Unique stable identifier for this sensor instance */
@@ -47,17 +47,25 @@ export function registerSensor(schema: SensorSchema): Signal {
   }
 
   // Emit a NEW_SENSOR_DETECTED signal for alive-mind to evaluate
-  return {
+  return makeSignal({
     id: crypto.randomUUID(),
     source: 'system_api',
+    kind: 'system_startup',
     raw_content: {
       event: 'NEW_SENSOR_DETECTED',
       schema,
     },
+    payload: {
+      event: 'NEW_SENSOR_DETECTED',
+      schema,
+    },
     timestamp: Date.now(),
+    urgency: 0.3,
+    confidence: 0.95,
+    quality_score: 0.95,
     threat_flag: false,
     firewall_status: 'cleared',
-  };
+  });
 }
 
 /** Look up a registered sensor schema by id. */

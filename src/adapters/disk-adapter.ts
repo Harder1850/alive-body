@@ -4,7 +4,7 @@
  * Carry-only: no interpretation, no decisions.
  */
 
-import type { Signal } from '../../../alive-constitution/contracts/signal';
+import { makeSignal, type Signal } from '../../../alive-constitution/contracts/signal';
 import si from 'systeminformation';
 import { BaseAdapter } from './base-adapter';
 
@@ -35,13 +35,28 @@ export class DiskAdapter implements BaseAdapter {
       use_percent: Math.round((v.use ?? 0) * 100) / 100,
     }));
 
-    return {
+    const minAvailable = readings.length > 0
+      ? Math.min(...readings.map((r) => r.available_bytes))
+      : 0;
+    const urgency = readings.length > 0
+      ? Math.max(...readings.map((r) => r.use_percent / 100))
+      : 0.2;
+
+    return makeSignal({
       id: crypto.randomUUID(),
       source: 'telemetry',
+      kind: 'disk_available',
       raw_content: readings,
+      payload: {
+        bytes_available: minAvailable,
+        volume_count: readings.length,
+      },
       timestamp: Date.now(),
+      urgency,
+      confidence: 0.95,
+      quality_score: 0.95,
       threat_flag: false,
       firewall_status: 'pending',
-    };
+    });
   }
 }

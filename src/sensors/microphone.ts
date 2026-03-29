@@ -6,7 +6,7 @@
  */
 
 import { registerSensor } from './sensor-registry';
-import type { Signal } from '../../../alive-constitution/contracts/signal';
+import { makeSignal, type Signal } from '../../../alive-constitution/contracts/signal';
 
 export const microphoneRegistrationSignal: Signal = registerSensor({
   id: 'sensor-microphone-01',
@@ -21,12 +21,17 @@ export const microphoneRegistrationSignal: Signal = registerSensor({
  * Mock microphone read — returns a text transcript Signal.
  */
 export function readMicrophone(transcript: string): Signal {
-  return {
+  return makeSignal({
     id: crypto.randomUUID(),
     source: 'microphone',
+    kind: 'user_input',
     raw_content: transcript,
+    payload: { transcript },
     timestamp: Date.now(),
+    urgency: 0.4,
+    confidence: 0.9,
+    quality_score: 0.9,
     threat_flag: false,
     firewall_status: 'pending',
-  };
+  });
 }

@@ -6,7 +6,7 @@
  */
 
 import { registerSensor } from './sensor-registry';
-import type { Signal } from '../../../alive-constitution/contracts/signal';
+import { makeSignal, type Signal } from '../../../alive-constitution/contracts/signal';
 
 export const cameraRegistrationSignal: Signal = registerSensor({
   id: 'sensor-camera-01',
@@ -22,12 +22,17 @@ export const cameraRegistrationSignal: Signal = registerSensor({
  */
 export function readCamera(alert: 'clear' | 'object_near' | 'object_contact' | 'obstruction'): Signal {
   const isThreaten = alert === 'object_contact' || alert === 'obstruction';
-  return {
+  return makeSignal({
     id: crypto.randomUUID(),
     source: 'camera',
+    kind: 'file_change_event',
     raw_content: { alert },
+    payload: { alert },
     timestamp: Date.now(),
+    urgency: isThreaten ? 0.95 : 0.3,
+    confidence: 0.9,
+    quality_score: 0.9,
     threat_flag: isThreaten,
     firewall_status: 'cleared',
-  };
+  });
 }

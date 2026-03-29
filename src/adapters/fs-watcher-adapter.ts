@@ -10,7 +10,7 @@
  *   adapter.stop();
  */
 
-import type { Signal } from '../../../alive-constitution/contracts/signal';
+import { makeSignal, type Signal } from '../../../alive-constitution/contracts/signal';
 import { watch, FSWatcher } from 'fs';
 import { BaseAdapter } from './base-adapter';
 
@@ -54,13 +54,20 @@ export class FsWatcherAdapter implements BaseAdapter {
   /** Returns a Signal for the next queued fs event, or null raw_content if the queue is empty. */
   async receive(): Promise<Signal> {
     const reading = this.queue.shift() ?? null;
-    return {
+    return makeSignal({
       id: crypto.randomUUID(),
       source: 'telemetry',
+      kind: 'file_change_event',
       raw_content: reading,
+      payload: reading
+        ? { file_path: reading.filename ?? 'unknown', event_type: reading.event, watch_path: reading.watch_path }
+        : undefined,
       timestamp: Date.now(),
+      urgency: reading ? 0.5 : 0.1,
+      confidence: reading ? 0.9 : 0.6,
+      quality_score: reading ? 0.9 : 0.6,
       threat_flag: false,
       firewall_status: 'pending',
-    };
+    });
   }
 }

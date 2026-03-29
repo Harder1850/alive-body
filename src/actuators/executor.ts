@@ -1,5 +1,5 @@
 import type { Action } from '../../../alive-constitution/contracts/action';
-import { recordExecution } from '../logging/execution-log';
+import { logActionDispatched, logActionOutcome } from '../logging/execution-log';
 import { writeWebFile } from '../tools/file-manager';
 
 export function executeAction(action: Action): string {
@@ -16,13 +16,10 @@ export function executeAction(action: Action): string {
     result = 'Unsupported action';
   }
 
-  recordExecution({
-    timestamp: Date.now(),
-    signalId: '',
-    decisionId: '',
-    actionType: action.type,
-    result,
-  });
+  const signalId = 'executor-local';
+  const decisionId = `exec-${Date.now()}`;
+  logActionDispatched(signalId, decisionId, action.type);
+  logActionOutcome(signalId, decisionId, !result.startsWith('FILE_WRITE_FAILED'), result);
 
   return result;
 }

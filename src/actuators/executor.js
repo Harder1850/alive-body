@@ -17,13 +17,9 @@ function executeAction(action) {
     else {
         result = 'Unsupported action';
     }
-    (0, execution_log_1.recordExecution)({
-        timestamp: Date.now(),
-        signalId: '',
-        decisionId: '',
-        actionType: action.type,
-        result,
-    });
+    const signalId = 'executor-local';
+    const decisionId = `exec-${Date.now()}`;
+    (0, execution_log_1.logActionDispatched)(signalId, decisionId, action.type);
+    (0, execution_log_1.logActionOutcome)(signalId, decisionId, !result.startsWith('FILE_WRITE_FAILED'), result);
     return result;
 }
-//# sourceMappingURL=executor.js.map

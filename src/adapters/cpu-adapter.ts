@@ -4,7 +4,7 @@
  * Carry-only: no interpretation, no decisions.
  */
 
-import type { Signal } from '../../../alive-constitution/contracts/signal';
+import { makeSignal, type Signal } from '../../../alive-constitution/contracts/signal';
 import si from 'systeminformation';
 import { BaseAdapter } from './base-adapter';
 
@@ -27,13 +27,22 @@ export class CpuAdapter implements BaseAdapter {
       core_count: load.cpus?.length ?? 0,
     };
 
-    return {
+    return makeSignal({
       id: crypto.randomUUID(),
       source: 'telemetry',
+      kind: 'cpu_utilization',
       raw_content: reading,
+      payload: {
+        usage_percent: reading.usage_percent,
+        core_count: reading.core_count,
+        cpu_risk: Math.min(1, reading.usage_percent / 100),
+      },
       timestamp: Date.now(),
+      urgency: Math.min(1, reading.usage_percent / 100),
+      confidence: 0.95,
+      quality_score: 0.95,
       threat_flag: false,
       firewall_status: 'pending',
-    };
+    });
   }
 }
