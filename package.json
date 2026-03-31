@@ -4,7 +4,8 @@
   "description": "Sensorimotor and safety layer of ALIVE. Handles external interfacing, firewall protection, reflex execution, and safe-state control.",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "test": "node --import tsx --test tests/*.test.ts"
   },
   "license": "Apache-2.0",
   "devDependencies": {
