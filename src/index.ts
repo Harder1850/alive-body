@@ -1,6 +1,6 @@
 export { ExternalFirewall } from "./nervous-system/external-firewall";
 export { EmergencyStop } from "./nervous-system/emergency-stop";
-export { executeAction } from "./actuators/executor";
+export { executeAction, type ExecutorResult } from "./actuators/executor";
 
 // Sensor adapters
 export { CpuAdapter } from "./adapters/cpu-adapter";
