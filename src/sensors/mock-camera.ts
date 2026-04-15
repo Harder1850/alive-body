@@ -6,7 +6,7 @@
  */
 
 import { registerSensor } from './sensor-registry';
-import { makeSignal, type Signal } from '../../../alive-constitution/contracts/signal';
+import { makeSignal, type Signal } from '../../../alive-constitution/contracts';
 
 export const cameraRegistrationSignal: Signal = registerSensor({
   id: 'sensor-camera-01',

@@ -9,7 +9,7 @@
  * That responsibility belongs to alive-mind via the STG path.
  */
 
-import { makeSignal, type Signal } from '../../../alive-constitution/contracts/signal';
+import { makeSignal, type Signal } from '../../../alive-constitution/contracts';
 
 export interface SensorSchema {
   /** Unique stable identifier for this sensor instance */

@@ -1,4 +1,4 @@
-import type { Signal } from '../../../alive-constitution/contracts/signal';
+import type { Signal } from '../../../alive-constitution/contracts';
 
 /**
  * Event bus for internal autonomic signals.

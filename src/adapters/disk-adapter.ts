@@ -4,7 +4,7 @@
  * Carry-only: no interpretation, no decisions.
  */
 
-import { makeSignal, type Signal } from '../../../alive-constitution/contracts/signal';
+import { makeSignal, type Signal } from '../../../alive-constitution/contracts';
 import si from 'systeminformation';
 import { BaseAdapter } from './base-adapter';
 

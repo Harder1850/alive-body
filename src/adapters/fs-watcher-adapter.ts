@@ -10,7 +10,7 @@
  *   adapter.stop();
  */
 
-import { makeSignal, type Signal } from '../../../alive-constitution/contracts/signal';
+import { makeSignal, type Signal } from '../../../alive-constitution/contracts';
 import { watch, FSWatcher } from 'fs';
 import { BaseAdapter } from './base-adapter';
 

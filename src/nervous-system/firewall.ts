@@ -20,7 +20,7 @@
  *   §14.6 — Malformed signals (null/empty source)
  */
 
-import type { Signal } from '../../../alive-constitution/contracts/signal';
+import type { Signal } from '../../../alive-constitution/contracts';
 
 // ---------------------------------------------------------------------------
 // Block rules — signals matching any of these are dropped immediately

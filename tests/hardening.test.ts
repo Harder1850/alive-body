@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import type { Signal } from '../alive-constitution/contracts/signal';
+import type { Signal } from '../alive-constitution/contracts';
 import type { Decision } from '../alive-constitution/contracts/decision';
 import { computeDecisionIntegrityHash } from '../alive-constitution/contracts/decision';
 import { routeSignal } from '../alive-runtime/src/router/signal-router';

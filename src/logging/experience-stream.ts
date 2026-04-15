@@ -10,7 +10,7 @@
 
 import { appendFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import type { Signal } from '../../../alive-constitution/contracts/signal';
+import type { Signal } from '../../../alive-constitution/contracts';
 
 const STREAM_DIR  = join(__dirname, '..', '..', 'logs');
 const STREAM_PATH = join(STREAM_DIR, 'experience-stream.jsonl');

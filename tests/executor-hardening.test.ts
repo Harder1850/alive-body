@@ -16,8 +16,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import type { Action }              from '../alive-constitution/contracts/action';
-import type { ActionAuthorization } from '../alive-constitution/contracts/authorized-action';
-import { computeActionHash }        from '../alive-constitution/contracts/authorized-action';
+import { type ActionAuthorization, computeActionHash } from '../alive-constitution/contracts';
 import { executeAction }            from './src/actuators/executor';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────

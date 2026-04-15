@@ -20,11 +20,7 @@
  */
 
 import type { Action } from '../../../alive-constitution/contracts/action';
-import type { ActionAuthorization } from '../../../alive-constitution/contracts/authorized-action';
-import {
-  hasValidAuthorization,
-  computeActionHash,
-} from '../../../alive-constitution/contracts/authorized-action';
+import { type ActionAuthorization, hasValidAuthorization, computeActionHash } from '../../../alive-constitution/contracts';
 import { logActionDispatched, logActionOutcome } from '../logging/execution-log';
 import { writeWebFile } from '../tools/file-manager';
 
