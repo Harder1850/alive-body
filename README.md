@@ -62,3 +62,9 @@ Mind/Runtime → Firewall → Actuators → Outside
 
 ## Drift Warning
 ⚠️ If this layer makes decisions, architecture integrity is lost.
+
+## Documentation Standard
+
+This repository follows the ALIVE documentation templates defined in:
+
+alive-constitution/docs/standards/TEMPLATES.md
