@@ -18,6 +18,7 @@
 
 import { execSync } from 'child_process';
 import { existsSync, readdirSync, rmSync } from 'fs';
+import { join } from 'path';
 import { writeWebFile } from '../tools/file-manager';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
